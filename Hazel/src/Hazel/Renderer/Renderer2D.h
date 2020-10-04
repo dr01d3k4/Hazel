@@ -44,8 +44,13 @@ namespace Hazel {
 		};
 		static void ResetStats();
 		static Statistics GetStats();
+
 	private:
 		static void FlushAndReset();
+
+		static float GetOrCreateTextureIndex(const Ref<Texture2D>& texture);
+
+		static void DrawQuad(const glm::mat4& transform, const float textureIndex, float tilingFactor, const glm::vec4& color);
 	};
 
 }
