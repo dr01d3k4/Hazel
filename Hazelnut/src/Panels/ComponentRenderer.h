@@ -75,6 +75,41 @@ namespace Hazel
 		}
 	};
 
+	template <typename T>
+	const std::vector<std::string>& getStringsForEnum() = delete;
+
+	template <>
+	const std::vector<std::string>& getStringsForEnum<SceneCamera::ProjectionType>()
+	{
+		static std::vector<std::string> strings = { "Perspective", "Orthographic" };
+		return strings;
+	}
+
+	// Note: this expects your enum to be castable to incrementing integers starting from 0 with no holes
+	template <typename T>
+	void renderEnumSelector(std::string name, T value, std::function<void(T newValue)> changedCallback)
+	{
+		const std::vector<std::string>& strings = getStringsForEnum<T>();
+		const std::string& current = strings[int(value)];
+
+		if (ImGui::BeginCombo(name.c_str(), current.c_str()))
+		{
+			for (int i = 0; i < strings.size(); ++i)
+			{
+				bool isSelected = int(value) == i;
+				if (ImGui::Selectable(strings[i].c_str(), isSelected))
+				{
+					changedCallback((T) i);
+				}
+
+				if (isSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+
+			ImGui::EndCombo();
+		}
+	}
+
 	class CameraComponentRenderer : public ComponentRenderer<CameraComponent>
 	{
 	public:
@@ -87,25 +122,10 @@ namespace Hazel
 
 			ImGui::Checkbox("Primary", &component.Primary);
 
-			const char* projectionTypeStrings[] = { "Perspective", "Orthographic" };
-			const char* currentProjectionTypeString = projectionTypeStrings[(int)camera.GetProjectionType()];
-			if (ImGui::BeginCombo("Projection", currentProjectionTypeString))
+			renderEnumSelector<SceneCamera::ProjectionType>("Projection", camera.GetProjectionType(), [&camera](SceneCamera::ProjectionType v)
 			{
-				for (int i = 0; i < 2; i++)
-				{
-					bool isSelected = currentProjectionTypeString == projectionTypeStrings[i];
-					if (ImGui::Selectable(projectionTypeStrings[i], isSelected))
-					{
-						currentProjectionTypeString = projectionTypeStrings[i];
-						camera.SetProjectionType((SceneCamera::ProjectionType)i);
-					}
-
-					if (isSelected)
-						ImGui::SetItemDefaultFocus();
-				}
-
-				ImGui::EndCombo();
-			}
+				camera.SetProjectionType(v);
+			});
 
 			if (camera.GetProjectionType() == SceneCamera::ProjectionType::Perspective)
 			{
